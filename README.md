@@ -9,6 +9,10 @@ grandeurs **météorologiques dérivées** (point de rosée, humidex, refroidiss
 éolien, pression au niveau de la mer…) et des indicateurs de **confort
 intérieur** (PMV/PPD ISO 7730, risque de moisissure, conseil d'aération…).
 
+> [!WARNING]
+> Projet en cours de développement (versions 0.x) : les noms d'entités et les
+> options peuvent encore changer d'une version à l'autre.
+
 Tout est calculé localement (`iot_class: calculated`), sans dépendance externe,
 et recalculé à chaque changement d'état d'un capteur source.
 
