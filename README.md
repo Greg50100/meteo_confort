@@ -68,8 +68,8 @@ créées que si ce capteur est renseigné.
 |---|---|
 | Point de rosée, point de givre | Magnus (Alduchov & Eskridge 1996) |
 | Température humide | Stull (2011) |
-| Indice de chaleur | NOAA / Rothfusz avec corrections |
-| Humidex | Environnement Canada |
+| Indice de chaleur | NOAA / Rothfusz avec corrections ; égal à la température de l'air sous 26,7 °C, où l'indice n'est pas défini |
+| Humidex | Environnement Canada ; égal à la température de l'air sous 20 °C, et jamais inférieur à celle-ci (air sec) |
 | Humidité absolue (g/m³), enthalpie (kJ/kg) | thermodynamique de l'air humide |
 | Ressenti de l'humidité | classes selon le point de rosée |
 | *Désactivées par défaut :* pression de vapeur, rapport de mélange, humidité spécifique, densité de l'air, indice de Thom | |
@@ -115,6 +115,25 @@ automation:
           message: >
             Aérez maintenant ({{ state_attr('binary_sensor.salon_aeration_recommandee', 'reasons') | join(', ') }}).
 ```
+
+## Calculateur hors ligne
+
+`tools/calculateur.py` est une petite application de bureau qui réutilise le
+moteur de calcul et les traductions françaises de l'intégration, sans Home
+Assistant ni connexion : vous saisissez les mesures à la main et tous les
+résultats se mettent à jour en direct. Elle ne demande que Python 3.10 ou plus
+récent, avec tkinter (inclus dans l'installateur Windows de python.org).
+
+```bash
+python tools/calculateur.py
+```
+
+- Choisissez le profil **Extérieur** ou **Intérieur**, puis remplissez l'onglet
+  *Mesures* (température et humidité obligatoires, le reste facultatif).
+- L'onglet *Paramètres* reprend les réglages de l'intégration (plages de
+  confort, met/clo, fRsi, altitude…).
+- Les virgules décimales sont acceptées (`21,5`). **Copier les résultats** met
+  le tableau dans le presse-papiers.
 
 ## Développement
 

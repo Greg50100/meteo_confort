@@ -26,6 +26,11 @@ R_WATER_VAPOR = 461.5  # J/(kg·K)
 STANDARD_PRESSURE = 1013.25  # hPa
 KELVIN = 273.15
 
+# Below these air temperatures the heat indices are not defined and fall back to
+# the air temperature (NWS: 80 °F; Environment Canada reports humidex from 20 °C)
+HEAT_INDEX_MIN_TEMP = 26.7
+HUMIDEX_MIN_TEMP = 20.0
+
 # Minimum absolute humidity difference (g/m³) for airing to actually dry a room
 VENTILATION_HUMIDITY_MARGIN = 1.0
 # Minimum outdoor/indoor temperature gap (°C) for free cooling by airing
@@ -151,7 +156,12 @@ def air_density(temp: float, humidity: float, pressure: float) -> float:
 
 
 def heat_index(temp: float, humidity: float) -> float:
-    """Heat index in °C (NOAA / Rothfusz regression with adjustments)."""
+    """Heat index in °C (NOAA / Rothfusz regression with adjustments).
+
+    Returns the air temperature below 26.7 °C, where the index is not defined.
+    """
+    if temp < HEAT_INDEX_MIN_TEMP:
+        return temp
     t = temp * 9 / 5 + 32
     rh = humidity
     hi = 0.5 * (t + 61.0 + (t - 68.0) * 1.2 + rh * 0.094)
@@ -175,10 +185,16 @@ def heat_index(temp: float, humidity: float) -> float:
 
 
 def humidex(temp: float, humidity: float) -> float:
-    """Canadian humidex in °C."""
+    """Canadian humidex in °C.
+
+    Returns the air temperature below 20 °C, and never less than it: dry air
+    (dew point under ~7 °C) adds no humid heat.
+    """
+    if temp < HUMIDEX_MIN_TEMP:
+        return temp
     td = dew_point(temp, humidity)
     e = 6.11 * math.exp(5417.7530 * (1 / 273.16 - 1 / (KELVIN + td)))
-    return temp + 0.5555 * (e - 10)
+    return max(temp, temp + 0.5555 * (e - 10))
 
 
 def wind_chill(temp: float, wind_kmh: float) -> float:
@@ -198,7 +214,7 @@ def feels_like(temp: float, humidity: float, wind_kmh: float) -> float:
     """Felt temperature in °C, NWS style: wind chill when cold, heat index when hot."""
     if temp <= 10 and wind_kmh > 4.8:
         return wind_chill(temp, wind_kmh)
-    if temp >= 26.7:
+    if temp >= HEAT_INDEX_MIN_TEMP:
         return max(temp, heat_index(temp, humidity))
     return temp
 

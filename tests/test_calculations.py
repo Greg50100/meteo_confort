@@ -41,14 +41,27 @@ def test_wet_bulb_stull_reference():
 def test_heat_index_noaa_table():
     # NOAA table: 90 °F / 70 % → 106 °F (41.1 °C)
     assert calc.heat_index(32.22, 70) == pytest.approx(41.1, abs=0.5)
-    # Below the regression domain, heat index stays close to the air temperature
-    assert calc.heat_index(20, 50) == pytest.approx(19.6, abs=0.5)
+    # Not defined below 26.7 °C: falls back to the air temperature
+    assert calc.heat_index(20, 50) == 20
+    assert calc.heat_index(-2, 90) == -2
+
+
+def test_heat_index_dry_heat_may_feel_cooler():
+    # NOAA low-humidity adjustment: dry heat can be below the air temperature
+    assert calc.heat_index(35, 5) < 35
 
 
 def test_humidex_environment_canada_table():
     # Air 30 °C, dew point 15 °C → humidex 34
     rh = 100 * calc.vapor_pressure(15, 100) / calc.saturation_vapor_pressure(30)
     assert calc.humidex(30, rh) == pytest.approx(34, abs=0.6)
+
+
+def test_humidex_outside_its_domain():
+    assert calc.humidex(-2, 90) == -2
+    assert calc.humidex(15, 90) == 15
+    # Dry air (dew point ≈ 4.6 °C) would give 29.2 with the raw formula
+    assert calc.humidex(30, 20) == 30
 
 
 def test_wind_chill_environment_canada_table():
