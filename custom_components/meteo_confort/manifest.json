@@ -1,6 +1,7 @@
 {
   "domain": "meteo_confort",
   "name": "Météo & Confort",
+  "categories": ["helpers.calculate_value", "sensors.temperature_humidity", "weather_alerts"],
   "codeowners": ["@Greg50100"],
   "config_flow": true,
   "dependencies": [],
