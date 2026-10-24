@@ -201,6 +201,14 @@ SENSORS: tuple[MeteoConfortSensorDescription, ...] = (
         profiles=INDOOR,
         requires=(CONF_OUTDOOR_TEMPERATURE,),
     ),
+    MeteoConfortSensorDescription(
+        key="mold_humidity",
+        device_class=SensorDeviceClass.HUMIDITY,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=PERCENTAGE,
+        suggested_display_precision=0,
+        profiles=INDOOR,
+    ),
     _enum("mold_risk", MOLD_RISKS, profiles=INDOOR),
     MeteoConfortSensorDescription(
         key="outdoor_absolute_humidity",

@@ -8,7 +8,14 @@ import voluptuous as vol
 
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
-from homeassistant.const import CONF_NAME, PERCENTAGE, UnitOfLength, UnitOfSpeed, UnitOfTemperature
+from homeassistant.const import (
+    CONF_NAME,
+    PERCENTAGE,
+    UnitOfLength,
+    UnitOfSpeed,
+    UnitOfTemperature,
+    UnitOfTime,
+)
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers.selector import (
@@ -36,6 +43,7 @@ from .const import (
     CONF_HUMIDITY_MIN,
     CONF_MET,
     CONF_MOLD_THRESHOLD,
+    CONF_MOLD_WINDOW,
     CONF_OUTDOOR_HUMIDITY,
     CONF_OUTDOOR_TEMPERATURE,
     CONF_PRESSURE,
@@ -130,6 +138,9 @@ def _build_schema(
                 _setting(CONF_FRSI, values, DEFAULTS.frsi): _number(0.3, 1, 0.01),
                 _setting(CONF_MOLD_THRESHOLD, values, DEFAULTS.mold_threshold): _number(
                     50, 100, 1, PERCENTAGE
+                ),
+                _setting(CONF_MOLD_WINDOW, values, DEFAULTS.mold_window): _number(
+                    0, 168, 1, UnitOfTime.HOURS
                 ),
             }
         )

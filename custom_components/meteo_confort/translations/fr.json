@@ -67,13 +67,15 @@
               "clo": "Isolation vestimentaire",
               "air_speed": "Vitesse de l'air",
               "frsi": "Facteur de température des parois (fRsi)",
-              "mold_threshold": "Seuil d'alerte moisissure"
+              "mold_threshold": "Seuil d'alerte moisissure",
+              "mold_window": "Durée de la moyenne moisissure"
             },
             "data_description": {
               "met": "1,0 assis au repos · 1,2 activité de bureau · 2,0 tâches ménagères.",
               "clo": "0,5 tenue d'été · 1,0 tenue d'hiver d'intérieur.",
               "frsi": "0,7 pour un pont thermique courant, 0,9 et plus pour un mur bien isolé.",
-              "mold_threshold": "Humidité relative à la surface au-delà de laquelle l'alerte se déclenche (80 % selon ISO 13788)."
+              "mold_threshold": "Humidité relative moyenne à la surface au-delà de laquelle l'alerte se déclenche (80 % selon ISO 13788). Elle retombe 5 points plus bas.",
+              "mold_window": "La moisissure demande une humidité durable : l'alerte porte sur la moyenne de cette période, pour ignorer les pics passagers (douche, cuisine). 0 = valeur instantanée."
             }
           }
         }
@@ -117,7 +119,8 @@
               "clo": "Isolation vestimentaire",
               "air_speed": "Vitesse de l'air",
               "frsi": "Facteur de température des parois (fRsi)",
-              "mold_threshold": "Seuil d'alerte moisissure"
+              "mold_threshold": "Seuil d'alerte moisissure",
+              "mold_window": "Durée de la moyenne moisissure"
             }
           }
         }
@@ -232,6 +235,7 @@
       },
       "surface_temperature": { "name": "Température des parois froides" },
       "surface_humidity": { "name": "Humidité aux parois froides" },
+      "mold_humidity": { "name": "Humidité moyenne (moisissure)" },
       "mold_risk": {
         "name": "Risque de moisissure",
         "state": {
@@ -246,7 +250,14 @@
     "binary_sensor": {
       "frost_risk": { "name": "Risque de gel" },
       "fog_risk": { "name": "Risque de brouillard" },
-      "mold_alert": { "name": "Alerte moisissure" },
+      "mold_alert": {
+        "name": "Alerte moisissure",
+        "state_attributes": {
+          "mean_humidity": { "name": "Humidité moyenne" },
+          "window_hours": { "name": "Durée de la moyenne (h)" },
+          "coverage_hours": { "name": "Historique disponible (h)" }
+        }
+      },
       "condensation_alert": { "name": "Condensation sur les parois" },
       "ventilation": {
         "name": "Aération recommandée",

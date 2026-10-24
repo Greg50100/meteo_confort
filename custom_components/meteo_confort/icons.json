@@ -37,6 +37,7 @@
       "co2_level": { "default": "mdi:molecule-co2" },
       "surface_temperature": { "default": "mdi:wall" },
       "surface_humidity": { "default": "mdi:wall" },
+      "mold_humidity": { "default": "mdi:water-percent-alert" },
       "mold_risk": { "default": "mdi:bacteria-outline" },
       "outdoor_absolute_humidity": { "default": "mdi:home-export-outline" }
     },

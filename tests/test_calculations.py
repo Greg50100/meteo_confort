@@ -167,5 +167,130 @@ def test_compute_all_indoor_without_optional_sensors():
     assert "co2_level" not in data
 
 
+HOUR = 3600
+
+
+def test_rolling_mean_is_time_weighted():
+    history = calc.RollingMean(window=24 * HOUR)
+    history.add(0, 60)
+    history.add(22 * HOUR, 90)  # 2 h shower peak at the end of the day
+    assert history.mean(24 * HOUR) == pytest.approx((60 * 22 + 90 * 2) / 24)
+    assert history.coverage(24 * HOUR) == 24 * HOUR
+
+
+def test_rolling_mean_prunes_old_samples_and_skips_repeats():
+    history = calc.RollingMean(window=2 * HOUR)
+    history.add(0, 50)
+    history.add(1 * HOUR, 50)  # unchanged: not stored
+    history.add(3 * HOUR, 70)
+    history.add(6 * HOUR, 70)
+    assert [value for _, value in history.samples] == [70]
+    assert history.mean(6 * HOUR) == 70
+
+
+def test_rolling_mean_empty_and_zero_window():
+    assert calc.RollingMean(window=HOUR).mean(0) is None
+    history = calc.RollingMean(window=0)
+    history.add(10, 85)
+    assert history.mean(10) == 85
+    assert history.coverage(10) == 0
+
+
+def _indoor(humidity, previous=None, **kwargs):
+    m = calc.Measurements(temperature=20, humidity=humidity, **kwargs)
+    return calc.compute_all(calc.PROFILE_INDOOR, m, calc.Settings(), previous=previous)
+
+
+def test_mold_alert_hysteresis():
+    on = _indoor(82)
+    assert on["mold_alert"] is True
+    # Back under 80 % but within the 5 point margin: stays on
+    assert _indoor(77, previous=on)["mold_alert"] is True
+    assert _indoor(74, previous=on)["mold_alert"] is False
+    # Without a previous alert, 77 % does not trigger
+    assert _indoor(77)["mold_alert"] is False
+
+
+def test_mold_alert_ignores_a_shower_peak():
+    history = calc.RollingMean(window=24 * HOUR)
+    s = calc.Settings()
+    data = None
+    for hour in range(24):
+        humidity = 95 if hour == 23 else 55
+        m = calc.Measurements(temperature=20, humidity=humidity)
+        data = calc.compute_all(
+            calc.PROFILE_INDOOR, m, s, previous=data, now=hour * HOUR, mold_history=history
+        )
+    assert data["mold_alert"] is False
+    assert data["mold_humidity"] == pytest.approx(55, abs=0.1)
+    assert data["mold_window"] == 24
+    assert data["mold_coverage"] == 23
+    # Lasting dampness does trigger it
+    for hour in range(24, 72):
+        m = calc.Measurements(temperature=20, humidity=88)
+        data = calc.compute_all(
+            calc.PROFILE_INDOOR, m, s, previous=data, now=hour * HOUR, mold_history=history
+        )
+    assert data["mold_alert"] is True
+    assert data["mold_risk"] == "high"
+
+
+def test_ventilation_co2_hysteresis():
+    on = _indoor(50, co2=1050)
+    assert on["ventilation_reasons"] == ["co2"]
+    assert _indoor(50, previous=on, co2=950)["ventilation"] is True
+    assert _indoor(50, previous=on, co2=890)["ventilation"] is False
+    assert _indoor(50, co2=950)["ventilation"] is False
+
+
+def test_ventilation_humidity_and_cooling_hysteresis():
+    s = calc.Settings()
+    m = calc.Measurements(temperature=25, humidity=65, outdoor_temperature=15, outdoor_humidity=60)
+    on = calc.compute_all(calc.PROFILE_INDOOR, m, s)
+    assert on["ventilation_reasons"] == ["humidity", "cooling"]
+    # 59 % and 23.8 °C: back under the limits but within the margins
+    m = calc.Measurements(temperature=23.8, humidity=59, outdoor_temperature=15, outdoor_humidity=60)
+    assert calc.compute_all(calc.PROFILE_INDOOR, m, s, previous=on)["ventilation_reasons"] == [
+        "humidity",
+        "cooling",
+    ]
+    m = calc.Measurements(temperature=23, humidity=56, outdoor_temperature=15, outdoor_humidity=60)
+    assert calc.compute_all(calc.PROFILE_INDOOR, m, s, previous=on)["ventilation"] is False
+
+
+def test_condensation_hysteresis():
+    s = calc.Settings()
+    m = calc.Measurements(temperature=20, humidity=70, outdoor_temperature=0)
+    on = calc.compute_all(calc.PROFILE_INDOOR, m, s)
+    assert on["condensation_alert"] is True  # wall 14 °C ≤ dew point 14.4 °C
+    # Wall 14.6 °C, just above the dew point: stays on within 0.5 °C
+    m = calc.Measurements(temperature=20, humidity=70, outdoor_temperature=2)
+    assert calc.compute_all(calc.PROFILE_INDOOR, m, s, previous=on)["condensation_alert"] is True
+    assert calc.compute_all(calc.PROFILE_INDOOR, m, s)["condensation_alert"] is False
+
+
+def _outdoor(temperature, humidity, previous=None, wind=None):
+    m = calc.Measurements(temperature=temperature, humidity=humidity, wind_speed=wind)
+    return calc.compute_all(calc.PROFILE_OUTDOOR, m, calc.Settings(), previous=previous)
+
+
+def test_frost_risk_hysteresis():
+    on = _outdoor(2.5, 80)  # dew point -0.6 °C
+    assert on["frost_risk"] is True
+    # 3.5 °C, dew point 0.4 °C: off on its own, kept on within the 1 °C margin
+    assert _outdoor(3.5, 80)["frost_risk"] is False
+    assert _outdoor(3.5, 80, previous=on)["frost_risk"] is True
+    assert _outdoor(4.5, 80, previous=on)["frost_risk"] is False  # dew point 1.3 °C
+
+
+def test_fog_risk_hysteresis():
+    on = _outdoor(10, 92, wind=5)
+    assert on["fog_risk"] is True  # spread ≈ 1.2 °C
+    assert _outdoor(10, 88, previous=on, wind=5)["fog_risk"] is True  # spread ≈ 1.8 °C
+    assert _outdoor(10, 88, wind=5)["fog_risk"] is False
+    assert _outdoor(10, 92, previous=on, wind=16)["fog_risk"] is True
+    assert _outdoor(10, 92, previous=on, wind=19)["fog_risk"] is False
+
+
 def test_compute_all_missing_inputs():
     assert calc.compute_all(calc.PROFILE_INDOOR, calc.Measurements(temperature=20), calc.Settings()) == {}
