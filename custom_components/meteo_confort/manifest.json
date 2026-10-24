@@ -1,0 +1,13 @@
+{
+  "domain": "meteo_confort",
+  "name": "Météo & Confort",
+  "codeowners": ["@Greg50100"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/Greg50100/meteo_confort",
+  "integration_type": "device",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/Greg50100/meteo_confort/issues",
+  "requirements": [],
+  "version": "1.0.0"
+}

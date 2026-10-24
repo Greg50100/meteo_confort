@@ -1,0 +1,266 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Météo & Confort",
+        "description": "Quel type de profil voulez-vous créer ?",
+        "menu_options": {
+          "outdoor": "Extérieur (station météo)",
+          "indoor": "Intérieur (pièce)"
+        }
+      },
+      "outdoor": {
+        "title": "Profil extérieur",
+        "description": "Choisissez les capteurs de votre station météo. Seuls la température et l'humidité sont obligatoires.",
+        "data": {
+          "name": "Nom",
+          "temperature": "Température",
+          "humidity": "Humidité relative",
+          "pressure": "Pression atmosphérique",
+          "wind_speed": "Vitesse du vent"
+        },
+        "data_description": {
+          "pressure": "Active la pression au niveau de la mer (ou à la station) et affine les calculs d'enthalpie et de densité.",
+          "wind_speed": "Active le refroidissement éolien, la température apparente et l'échelle de Beaufort."
+        },
+        "sections": {
+          "settings": {
+            "name": "Paramètres avancés",
+            "data": {
+              "altitude": "Altitude de la station",
+              "pressure_type": "Type de pression mesurée"
+            },
+            "data_description": {
+              "altitude": "Par défaut, l'altitude configurée dans Home Assistant.",
+              "pressure_type": "La plupart des stations affichent la pression relative (niveau de la mer)."
+            }
+          }
+        }
+      },
+      "indoor": {
+        "title": "Profil intérieur",
+        "description": "Choisissez les capteurs de la pièce. Les capteurs extérieurs permettent d'estimer le risque de moisissure et de conseiller l'aération.",
+        "data": {
+          "name": "Nom",
+          "temperature": "Température",
+          "humidity": "Humidité relative",
+          "co2": "CO₂",
+          "radiant_temperature": "Température radiante moyenne (globe)",
+          "outdoor_temperature": "Température extérieure",
+          "outdoor_humidity": "Humidité extérieure"
+        },
+        "data_description": {
+          "radiant_temperature": "Facultatif. À défaut, la température de l'air est utilisée pour le calcul PMV/PPD.",
+          "outdoor_temperature": "Permet d'estimer la température des parois froides (moisissure, condensation).",
+          "outdoor_humidity": "Avec la température extérieure, indique si aérer va réellement assécher la pièce."
+        },
+        "sections": {
+          "settings": {
+            "name": "Paramètres de confort",
+            "data": {
+              "temp_min": "Température minimale de confort",
+              "temp_max": "Température maximale de confort",
+              "humidity_min": "Humidité minimale de confort",
+              "humidity_max": "Humidité maximale de confort",
+              "co2_max": "Seuil d'aération CO₂",
+              "met": "Activité métabolique",
+              "clo": "Isolation vestimentaire",
+              "air_speed": "Vitesse de l'air",
+              "frsi": "Facteur de température des parois (fRsi)",
+              "mold_threshold": "Seuil d'alerte moisissure"
+            },
+            "data_description": {
+              "met": "1,0 assis au repos · 1,2 activité de bureau · 2,0 tâches ménagères.",
+              "clo": "0,5 tenue d'été · 1,0 tenue d'hiver d'intérieur.",
+              "frsi": "0,7 pour un pont thermique courant, 0,9 et plus pour un mur bien isolé.",
+              "mold_threshold": "Humidité relative à la surface au-delà de laquelle l'alerte se déclenche (80 % selon ISO 13788)."
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "same_entity": "Ce capteur est déjà utilisé comme capteur intérieur.",
+      "invalid_temperature_range": "La température minimale doit être inférieure à la maximale.",
+      "invalid_humidity_range": "L'humidité minimale doit être inférieure à la maximale."
+    },
+    "abort": {
+      "already_configured": "Un profil utilise déjà ces capteurs."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Modifier le profil",
+        "data": {
+          "temperature": "Température",
+          "humidity": "Humidité relative",
+          "pressure": "Pression atmosphérique",
+          "wind_speed": "Vitesse du vent",
+          "co2": "CO₂",
+          "radiant_temperature": "Température radiante moyenne (globe)",
+          "outdoor_temperature": "Température extérieure",
+          "outdoor_humidity": "Humidité extérieure"
+        },
+        "sections": {
+          "settings": {
+            "name": "Paramètres",
+            "data": {
+              "altitude": "Altitude de la station",
+              "pressure_type": "Type de pression mesurée",
+              "temp_min": "Température minimale de confort",
+              "temp_max": "Température maximale de confort",
+              "humidity_min": "Humidité minimale de confort",
+              "humidity_max": "Humidité maximale de confort",
+              "co2_max": "Seuil d'aération CO₂",
+              "met": "Activité métabolique",
+              "clo": "Isolation vestimentaire",
+              "air_speed": "Vitesse de l'air",
+              "frsi": "Facteur de température des parois (fRsi)",
+              "mold_threshold": "Seuil d'alerte moisissure"
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "same_entity": "Ce capteur est déjà utilisé comme capteur intérieur.",
+      "invalid_temperature_range": "La température minimale doit être inférieure à la maximale.",
+      "invalid_humidity_range": "L'humidité minimale doit être inférieure à la maximale."
+    }
+  },
+  "selector": {
+    "pressure_type": {
+      "options": {
+        "station": "Pression absolue (à la station)",
+        "sea_level": "Pression relative (niveau de la mer)"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "dew_point": { "name": "Point de rosée" },
+      "frost_point": { "name": "Point de givre" },
+      "wet_bulb": { "name": "Température humide" },
+      "heat_index": { "name": "Indice de chaleur" },
+      "humidex": { "name": "Humidex" },
+      "discomfort_index": { "name": "Indice d'inconfort de Thom" },
+      "absolute_humidity": { "name": "Humidité absolue" },
+      "vapor_pressure": { "name": "Pression de vapeur" },
+      "mixing_ratio": { "name": "Rapport de mélange" },
+      "specific_humidity": { "name": "Humidité spécifique" },
+      "enthalpy": { "name": "Enthalpie" },
+      "air_density": { "name": "Densité de l'air" },
+      "dew_point_perception": {
+        "name": "Ressenti de l'humidité",
+        "state": {
+          "dry": "Sec",
+          "very_comfortable": "Très confortable",
+          "comfortable": "Confortable",
+          "slightly_humid": "Légèrement humide",
+          "humid": "Humide",
+          "very_humid": "Très humide",
+          "oppressive": "Étouffant"
+        }
+      },
+      "feels_like": { "name": "Température ressentie" },
+      "wind_chill": { "name": "Refroidissement éolien" },
+      "apparent_temperature": { "name": "Température apparente" },
+      "sea_level_pressure": { "name": "Pression au niveau de la mer" },
+      "station_pressure": { "name": "Pression à la station" },
+      "cloud_base": { "name": "Base des nuages" },
+      "beaufort": { "name": "Force du vent (Beaufort)" },
+      "heat_stress": {
+        "name": "Risque de chaleur",
+        "state": {
+          "none": "Aucun",
+          "caution": "Prudence",
+          "extreme_caution": "Prudence extrême",
+          "danger": "Danger",
+          "extreme_danger": "Danger extrême"
+        }
+      },
+      "wind_chill_risk": {
+        "name": "Risque de gelure",
+        "state": {
+          "low": "Faible",
+          "moderate": "Modéré",
+          "high": "Élevé",
+          "very_high": "Très élevé",
+          "severe": "Sévère",
+          "extreme": "Extrême"
+        }
+      },
+      "comfort_level": {
+        "name": "Niveau de confort",
+        "state": {
+          "comfortable": "Confortable",
+          "cold": "Trop froid",
+          "hot": "Trop chaud",
+          "dry": "Trop sec",
+          "humid": "Trop humide",
+          "cold_dry": "Froid et sec",
+          "cold_humid": "Froid et humide",
+          "hot_dry": "Chaud et sec",
+          "hot_humid": "Chaud et humide"
+        }
+      },
+      "comfort_score": { "name": "Score de confort" },
+      "pmv": { "name": "Vote moyen prévisible (PMV)" },
+      "ppd": { "name": "Pourcentage d'insatisfaits (PPD)" },
+      "thermal_sensation": {
+        "name": "Sensation thermique",
+        "state": {
+          "cold": "Froid",
+          "cool": "Frais",
+          "slightly_cool": "Légèrement frais",
+          "neutral": "Neutre",
+          "slightly_warm": "Légèrement tiède",
+          "warm": "Tiède",
+          "hot": "Chaud"
+        }
+      },
+      "co2_level": {
+        "name": "Qualité de l'air (CO₂)",
+        "state": {
+          "excellent": "Excellente",
+          "good": "Bonne",
+          "fair": "Moyenne",
+          "poor": "Médiocre",
+          "bad": "Mauvaise"
+        }
+      },
+      "surface_temperature": { "name": "Température des parois froides" },
+      "surface_humidity": { "name": "Humidité aux parois froides" },
+      "mold_risk": {
+        "name": "Risque de moisissure",
+        "state": {
+          "low": "Faible",
+          "moderate": "Modéré",
+          "high": "Élevé",
+          "very_high": "Très élevé"
+        }
+      },
+      "outdoor_absolute_humidity": { "name": "Humidité absolue extérieure" }
+    },
+    "binary_sensor": {
+      "frost_risk": { "name": "Risque de gel" },
+      "fog_risk": { "name": "Risque de brouillard" },
+      "mold_alert": { "name": "Alerte moisissure" },
+      "condensation_alert": { "name": "Condensation sur les parois" },
+      "ventilation": {
+        "name": "Aération recommandée",
+        "state_attributes": {
+          "reasons": {
+            "name": "Raisons",
+            "state": {
+              "co2": "CO₂ élevé",
+              "humidity": "Air extérieur plus sec",
+              "cooling": "Rafraîchissement gratuit"
+            }
+          }
+        }
+      }
+    }
+  }
+}

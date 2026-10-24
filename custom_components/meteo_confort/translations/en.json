@@ -1,0 +1,266 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Météo & Confort",
+        "description": "Which kind of profile do you want to create?",
+        "menu_options": {
+          "outdoor": "Outdoor (weather station)",
+          "indoor": "Indoor (room)"
+        }
+      },
+      "outdoor": {
+        "title": "Outdoor profile",
+        "description": "Pick your weather station sensors. Only temperature and humidity are required.",
+        "data": {
+          "name": "Name",
+          "temperature": "Temperature",
+          "humidity": "Relative humidity",
+          "pressure": "Atmospheric pressure",
+          "wind_speed": "Wind speed"
+        },
+        "data_description": {
+          "pressure": "Enables sea-level (or station) pressure and refines enthalpy and density.",
+          "wind_speed": "Enables wind chill, apparent temperature and the Beaufort scale."
+        },
+        "sections": {
+          "settings": {
+            "name": "Advanced settings",
+            "data": {
+              "altitude": "Station altitude",
+              "pressure_type": "Measured pressure type"
+            },
+            "data_description": {
+              "altitude": "Defaults to the elevation configured in Home Assistant.",
+              "pressure_type": "Most stations display relative (sea-level) pressure."
+            }
+          }
+        }
+      },
+      "indoor": {
+        "title": "Indoor profile",
+        "description": "Pick the room sensors. Outdoor sensors allow mold risk estimation and airing advice.",
+        "data": {
+          "name": "Name",
+          "temperature": "Temperature",
+          "humidity": "Relative humidity",
+          "co2": "CO₂",
+          "radiant_temperature": "Mean radiant temperature (globe)",
+          "outdoor_temperature": "Outdoor temperature",
+          "outdoor_humidity": "Outdoor humidity"
+        },
+        "data_description": {
+          "radiant_temperature": "Optional. Air temperature is used for PMV/PPD otherwise.",
+          "outdoor_temperature": "Used to estimate cold wall temperature (mold, condensation).",
+          "outdoor_humidity": "Together with outdoor temperature, tells whether airing will actually dry the room."
+        },
+        "sections": {
+          "settings": {
+            "name": "Comfort settings",
+            "data": {
+              "temp_min": "Minimum comfort temperature",
+              "temp_max": "Maximum comfort temperature",
+              "humidity_min": "Minimum comfort humidity",
+              "humidity_max": "Maximum comfort humidity",
+              "co2_max": "CO₂ airing threshold",
+              "met": "Metabolic rate",
+              "clo": "Clothing insulation",
+              "air_speed": "Air speed",
+              "frsi": "Surface temperature factor (fRsi)",
+              "mold_threshold": "Mold alert threshold"
+            },
+            "data_description": {
+              "met": "1.0 seated at rest · 1.2 office work · 2.0 housework.",
+              "clo": "0.5 summer clothing · 1.0 indoor winter clothing.",
+              "frsi": "0.7 for a typical thermal bridge, 0.9+ for a well insulated wall.",
+              "mold_threshold": "Surface relative humidity above which the alert triggers (80 % per ISO 13788)."
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "same_entity": "This sensor is already used as the indoor sensor.",
+      "invalid_temperature_range": "Minimum temperature must be lower than maximum.",
+      "invalid_humidity_range": "Minimum humidity must be lower than maximum."
+    },
+    "abort": {
+      "already_configured": "A profile already uses these sensors."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Edit profile",
+        "data": {
+          "temperature": "Temperature",
+          "humidity": "Relative humidity",
+          "pressure": "Atmospheric pressure",
+          "wind_speed": "Wind speed",
+          "co2": "CO₂",
+          "radiant_temperature": "Mean radiant temperature (globe)",
+          "outdoor_temperature": "Outdoor temperature",
+          "outdoor_humidity": "Outdoor humidity"
+        },
+        "sections": {
+          "settings": {
+            "name": "Settings",
+            "data": {
+              "altitude": "Station altitude",
+              "pressure_type": "Measured pressure type",
+              "temp_min": "Minimum comfort temperature",
+              "temp_max": "Maximum comfort temperature",
+              "humidity_min": "Minimum comfort humidity",
+              "humidity_max": "Maximum comfort humidity",
+              "co2_max": "CO₂ airing threshold",
+              "met": "Metabolic rate",
+              "clo": "Clothing insulation",
+              "air_speed": "Air speed",
+              "frsi": "Surface temperature factor (fRsi)",
+              "mold_threshold": "Mold alert threshold"
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "same_entity": "This sensor is already used as the indoor sensor.",
+      "invalid_temperature_range": "Minimum temperature must be lower than maximum.",
+      "invalid_humidity_range": "Minimum humidity must be lower than maximum."
+    }
+  },
+  "selector": {
+    "pressure_type": {
+      "options": {
+        "station": "Absolute pressure (station)",
+        "sea_level": "Relative pressure (sea level)"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "dew_point": { "name": "Dew point" },
+      "frost_point": { "name": "Frost point" },
+      "wet_bulb": { "name": "Wet-bulb temperature" },
+      "heat_index": { "name": "Heat index" },
+      "humidex": { "name": "Humidex" },
+      "discomfort_index": { "name": "Thom discomfort index" },
+      "absolute_humidity": { "name": "Absolute humidity" },
+      "vapor_pressure": { "name": "Vapor pressure" },
+      "mixing_ratio": { "name": "Mixing ratio" },
+      "specific_humidity": { "name": "Specific humidity" },
+      "enthalpy": { "name": "Enthalpy" },
+      "air_density": { "name": "Air density" },
+      "dew_point_perception": {
+        "name": "Humidity perception",
+        "state": {
+          "dry": "Dry",
+          "very_comfortable": "Very comfortable",
+          "comfortable": "Comfortable",
+          "slightly_humid": "Slightly humid",
+          "humid": "Humid",
+          "very_humid": "Very humid",
+          "oppressive": "Oppressive"
+        }
+      },
+      "feels_like": { "name": "Feels like" },
+      "wind_chill": { "name": "Wind chill" },
+      "apparent_temperature": { "name": "Apparent temperature" },
+      "sea_level_pressure": { "name": "Sea-level pressure" },
+      "station_pressure": { "name": "Station pressure" },
+      "cloud_base": { "name": "Cloud base" },
+      "beaufort": { "name": "Wind force (Beaufort)" },
+      "heat_stress": {
+        "name": "Heat stress",
+        "state": {
+          "none": "None",
+          "caution": "Caution",
+          "extreme_caution": "Extreme caution",
+          "danger": "Danger",
+          "extreme_danger": "Extreme danger"
+        }
+      },
+      "wind_chill_risk": {
+        "name": "Frostbite risk",
+        "state": {
+          "low": "Low",
+          "moderate": "Moderate",
+          "high": "High",
+          "very_high": "Very high",
+          "severe": "Severe",
+          "extreme": "Extreme"
+        }
+      },
+      "comfort_level": {
+        "name": "Comfort level",
+        "state": {
+          "comfortable": "Comfortable",
+          "cold": "Too cold",
+          "hot": "Too hot",
+          "dry": "Too dry",
+          "humid": "Too humid",
+          "cold_dry": "Cold and dry",
+          "cold_humid": "Cold and humid",
+          "hot_dry": "Hot and dry",
+          "hot_humid": "Hot and humid"
+        }
+      },
+      "comfort_score": { "name": "Comfort score" },
+      "pmv": { "name": "Predicted mean vote (PMV)" },
+      "ppd": { "name": "Predicted percentage dissatisfied (PPD)" },
+      "thermal_sensation": {
+        "name": "Thermal sensation",
+        "state": {
+          "cold": "Cold",
+          "cool": "Cool",
+          "slightly_cool": "Slightly cool",
+          "neutral": "Neutral",
+          "slightly_warm": "Slightly warm",
+          "warm": "Warm",
+          "hot": "Hot"
+        }
+      },
+      "co2_level": {
+        "name": "Air quality (CO₂)",
+        "state": {
+          "excellent": "Excellent",
+          "good": "Good",
+          "fair": "Fair",
+          "poor": "Poor",
+          "bad": "Bad"
+        }
+      },
+      "surface_temperature": { "name": "Cold wall temperature" },
+      "surface_humidity": { "name": "Cold wall humidity" },
+      "mold_risk": {
+        "name": "Mold risk",
+        "state": {
+          "low": "Low",
+          "moderate": "Moderate",
+          "high": "High",
+          "very_high": "Very high"
+        }
+      },
+      "outdoor_absolute_humidity": { "name": "Outdoor absolute humidity" }
+    },
+    "binary_sensor": {
+      "frost_risk": { "name": "Frost risk" },
+      "fog_risk": { "name": "Fog risk" },
+      "mold_alert": { "name": "Mold alert" },
+      "condensation_alert": { "name": "Wall condensation" },
+      "ventilation": {
+        "name": "Airing recommended",
+        "state_attributes": {
+          "reasons": {
+            "name": "Reasons",
+            "state": {
+              "co2": "High CO₂",
+              "humidity": "Drier outdoor air",
+              "cooling": "Free cooling"
+            }
+          }
+        }
+      }
+    }
+  }
+}

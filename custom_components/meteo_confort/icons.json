@@ -1,0 +1,51 @@
+{
+  "entity": {
+    "sensor": {
+      "dew_point": { "default": "mdi:thermometer-water" },
+      "frost_point": { "default": "mdi:snowflake-thermometer" },
+      "wet_bulb": { "default": "mdi:thermometer-water" },
+      "heat_index": { "default": "mdi:sun-thermometer" },
+      "humidex": { "default": "mdi:sun-thermometer-outline" },
+      "discomfort_index": { "default": "mdi:emoticon-sad-outline" },
+      "absolute_humidity": { "default": "mdi:water" },
+      "vapor_pressure": { "default": "mdi:gauge" },
+      "mixing_ratio": { "default": "mdi:water-percent" },
+      "specific_humidity": { "default": "mdi:water-percent" },
+      "enthalpy": { "default": "mdi:fire" },
+      "air_density": { "default": "mdi:weight" },
+      "dew_point_perception": { "default": "mdi:account-question" },
+      "feels_like": { "default": "mdi:thermometer-lines" },
+      "wind_chill": { "default": "mdi:snowflake-alert" },
+      "apparent_temperature": { "default": "mdi:thermometer-lines" },
+      "sea_level_pressure": { "default": "mdi:gauge" },
+      "station_pressure": { "default": "mdi:gauge" },
+      "cloud_base": { "default": "mdi:weather-cloudy-arrow-right" },
+      "beaufort": { "default": "mdi:weather-windy" },
+      "heat_stress": {
+        "default": "mdi:sun-thermometer",
+        "state": { "none": "mdi:check-circle-outline", "extreme_danger": "mdi:alert-octagon" }
+      },
+      "wind_chill_risk": { "default": "mdi:snowflake-alert" },
+      "comfort_level": {
+        "default": "mdi:sofa",
+        "state": { "comfortable": "mdi:emoticon-happy-outline" }
+      },
+      "comfort_score": { "default": "mdi:star-circle-outline" },
+      "pmv": { "default": "mdi:human" },
+      "ppd": { "default": "mdi:account-group" },
+      "thermal_sensation": { "default": "mdi:human-handsup" },
+      "co2_level": { "default": "mdi:molecule-co2" },
+      "surface_temperature": { "default": "mdi:wall" },
+      "surface_humidity": { "default": "mdi:wall" },
+      "mold_risk": { "default": "mdi:bacteria-outline" },
+      "outdoor_absolute_humidity": { "default": "mdi:home-export-outline" }
+    },
+    "binary_sensor": {
+      "frost_risk": { "default": "mdi:snowflake-off", "state": { "on": "mdi:snowflake-alert" } },
+      "fog_risk": { "default": "mdi:weather-sunny", "state": { "on": "mdi:weather-fog" } },
+      "mold_alert": { "default": "mdi:bacteria-outline", "state": { "on": "mdi:bacteria" } },
+      "condensation_alert": { "default": "mdi:water-off", "state": { "on": "mdi:water-alert" } },
+      "ventilation": { "default": "mdi:window-closed-variant", "state": { "on": "mdi:window-open-variant" } }
+    }
+  }
+}
