@@ -44,6 +44,7 @@ CONF_CLO = "clo"
 CONF_AIR_SPEED = "air_speed"
 CONF_FRSI = "frsi"
 CONF_MOLD_THRESHOLD = "mold_threshold"
+CONF_MOLD_WINDOW = "mold_window"
 
 SECTION_SETTINGS = "settings"
 

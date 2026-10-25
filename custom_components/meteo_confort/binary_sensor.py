@@ -28,7 +28,8 @@ class MeteoConfortBinarySensorDescription(
 ):
     """Binary sensor description."""
 
-    attributes_key: str | None = None
+    # (attribute name, key in the hub data) pairs explaining the state
+    attributes: tuple[tuple[str, str], ...] = ()
 
 
 BINARY_SENSORS: tuple[MeteoConfortBinarySensorDescription, ...] = (
@@ -37,7 +38,14 @@ BINARY_SENSORS: tuple[MeteoConfortBinarySensorDescription, ...] = (
     ),
     MeteoConfortBinarySensorDescription(key="fog_risk", profiles=OUTDOOR),
     MeteoConfortBinarySensorDescription(
-        key="mold_alert", device_class=BinarySensorDeviceClass.PROBLEM, profiles=INDOOR
+        key="mold_alert",
+        device_class=BinarySensorDeviceClass.PROBLEM,
+        profiles=INDOOR,
+        attributes=(
+            ("mean_humidity", "mold_humidity"),
+            ("window_hours", "mold_window"),
+            ("coverage_hours", "mold_coverage"),
+        ),
     ),
     MeteoConfortBinarySensorDescription(
         key="condensation_alert",
@@ -46,7 +54,7 @@ BINARY_SENSORS: tuple[MeteoConfortBinarySensorDescription, ...] = (
         requires=(CONF_OUTDOOR_TEMPERATURE,),
     ),
     MeteoConfortBinarySensorDescription(
-        key="ventilation", profiles=INDOOR, attributes_key="ventilation_reasons"
+        key="ventilation", profiles=INDOOR, attributes=(("reasons", "ventilation_reasons"),)
     ),
 )
 
@@ -78,6 +86,6 @@ class MeteoConfortBinarySensor(MeteoConfortEntity, BinarySensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
         """Expose the reasons behind the state, when relevant."""
-        if (key := self.entity_description.attributes_key) is None:
+        if not (attributes := self.entity_description.attributes):
             return None
-        return {"reasons": self.hub.data.get(key, [])}
+        return {name: self.hub.data.get(key) for name, key in attributes}

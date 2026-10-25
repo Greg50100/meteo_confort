@@ -67,13 +67,15 @@
               "clo": "Clothing insulation",
               "air_speed": "Air speed",
               "frsi": "Surface temperature factor (fRsi)",
-              "mold_threshold": "Mold alert threshold"
+              "mold_threshold": "Mold alert threshold",
+              "mold_window": "Mold averaging period"
             },
             "data_description": {
               "met": "1.0 seated at rest · 1.2 office work · 2.0 housework.",
               "clo": "0.5 summer clothing · 1.0 indoor winter clothing.",
               "frsi": "0.7 for a typical thermal bridge, 0.9+ for a well insulated wall.",
-              "mold_threshold": "Surface relative humidity above which the alert triggers (80 % per ISO 13788)."
+              "mold_threshold": "Mean surface relative humidity above which the alert triggers (80 % per ISO 13788). It clears 5 points lower.",
+              "mold_window": "Mold needs lasting dampness: the alert uses the mean over this period, ignoring short peaks (shower, cooking). 0 = instantaneous value."
             }
           }
         }
@@ -117,7 +119,8 @@
               "clo": "Clothing insulation",
               "air_speed": "Air speed",
               "frsi": "Surface temperature factor (fRsi)",
-              "mold_threshold": "Mold alert threshold"
+              "mold_threshold": "Mold alert threshold",
+              "mold_window": "Mold averaging period"
             }
           }
         }
@@ -232,6 +235,7 @@
       },
       "surface_temperature": { "name": "Cold wall temperature" },
       "surface_humidity": { "name": "Cold wall humidity" },
+      "mold_humidity": { "name": "Mean humidity (mold)" },
       "mold_risk": {
         "name": "Mold risk",
         "state": {
@@ -246,7 +250,14 @@
     "binary_sensor": {
       "frost_risk": { "name": "Frost risk" },
       "fog_risk": { "name": "Fog risk" },
-      "mold_alert": { "name": "Mold alert" },
+      "mold_alert": {
+        "name": "Mold alert",
+        "state_attributes": {
+          "mean_humidity": { "name": "Mean humidity" },
+          "window_hours": { "name": "Averaging period (h)" },
+          "coverage_hours": { "name": "Available history (h)" }
+        }
+      },
       "condensation_alert": { "name": "Wall condensation" },
       "ventilation": {
         "name": "Airing recommended",

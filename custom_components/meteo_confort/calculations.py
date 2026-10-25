@@ -7,6 +7,7 @@ stated otherwise.
 
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import dataclass
 import math
 from typing import Any
@@ -26,10 +27,31 @@ R_WATER_VAPOR = 461.5  # J/(kg·K)
 STANDARD_PRESSURE = 1013.25  # hPa
 KELVIN = 273.15
 
+# Below these air temperatures the heat indices are not defined and fall back to
+# the air temperature (NWS: 80 °F; Environment Canada reports humidex from 20 °C)
+HEAT_INDEX_MIN_TEMP = 26.7
+HUMIDEX_MIN_TEMP = 20.0
+
 # Minimum absolute humidity difference (g/m³) for airing to actually dry a room
 VENTILATION_HUMIDITY_MARGIN = 1.0
 # Minimum outdoor/indoor temperature gap (°C) for free cooling by airing
 VENTILATION_COOLING_MARGIN = 2.0
+
+FOG_MAX_SPREAD = 1.5  # °C between temperature and dew point
+FOG_MAX_WIND = 15.0  # km/h
+
+# Hysteresis margins: an alert switches off only once the value is back past
+# its threshold by this much, so it does not flap around the threshold
+MOLD_HYSTERESIS = 5.0  # % RH
+CONDENSATION_HYSTERESIS = 0.5  # °C
+FROST_HYSTERESIS = 1.0  # °C
+FOG_SPREAD_HYSTERESIS = 0.5  # °C
+FOG_WIND_HYSTERESIS = 3.0  # km/h
+CO2_HYSTERESIS = 100.0  # ppm
+HUMIDITY_HYSTERESIS = 3.0  # % RH
+ABSOLUTE_HUMIDITY_HYSTERESIS = 0.5  # g/m³
+TEMPERATURE_HYSTERESIS = 0.5  # °C
+COOLING_HYSTERESIS = 1.0  # °C
 
 DEW_POINT_PERCEPTIONS = [
     "dry",
@@ -151,7 +173,12 @@ def air_density(temp: float, humidity: float, pressure: float) -> float:
 
 
 def heat_index(temp: float, humidity: float) -> float:
-    """Heat index in °C (NOAA / Rothfusz regression with adjustments)."""
+    """Heat index in °C (NOAA / Rothfusz regression with adjustments).
+
+    Returns the air temperature below 26.7 °C, where the index is not defined.
+    """
+    if temp < HEAT_INDEX_MIN_TEMP:
+        return temp
     t = temp * 9 / 5 + 32
     rh = humidity
     hi = 0.5 * (t + 61.0 + (t - 68.0) * 1.2 + rh * 0.094)
@@ -175,10 +202,16 @@ def heat_index(temp: float, humidity: float) -> float:
 
 
 def humidex(temp: float, humidity: float) -> float:
-    """Canadian humidex in °C."""
+    """Canadian humidex in °C.
+
+    Returns the air temperature below 20 °C, and never less than it: dry air
+    (dew point under ~7 °C) adds no humid heat.
+    """
+    if temp < HUMIDEX_MIN_TEMP:
+        return temp
     td = dew_point(temp, humidity)
     e = 6.11 * math.exp(5417.7530 * (1 / 273.16 - 1 / (KELVIN + td)))
-    return temp + 0.5555 * (e - 10)
+    return max(temp, temp + 0.5555 * (e - 10))
 
 
 def wind_chill(temp: float, wind_kmh: float) -> float:
@@ -198,7 +231,7 @@ def feels_like(temp: float, humidity: float, wind_kmh: float) -> float:
     """Felt temperature in °C, NWS style: wind chill when cold, heat index when hot."""
     if temp <= 10 and wind_kmh > 4.8:
         return wind_chill(temp, wind_kmh)
-    if temp >= 26.7:
+    if temp >= HEAT_INDEX_MIN_TEMP:
         return max(temp, heat_index(temp, humidity))
     return temp
 
@@ -389,6 +422,52 @@ class Settings:
     air_speed: float = 0.1
     frsi: float = 0.7
     mold_threshold: float = 80.0
+    mold_window: float = 24.0  # hours
+
+
+class RollingMean:
+    """Time-weighted mean of a step signal over a sliding window.
+
+    Each value holds from its timestamp (in seconds) until the next one, so
+    irregular updates are weighted by how long they lasted.
+    """
+
+    def __init__(self, window: float, samples: list[tuple[float, float]] | None = None) -> None:
+        self.window = window
+        self.samples: deque[tuple[float, float]] = deque(samples or [])
+
+    def add(self, timestamp: float, value: float) -> None:
+        """Record a value that holds from `timestamp` until the next one."""
+        if self.samples and timestamp < self.samples[-1][0]:
+            return
+        # An unchanged value adds no information to a step signal
+        if not self.samples or round(value, 1) != round(self.samples[-1][1], 1):
+            self.samples.append((timestamp, value))
+        start = timestamp - self.window
+        # Keep the sample still in force at the start of the window
+        while len(self.samples) >= 2 and self.samples[1][0] <= start:
+            self.samples.popleft()
+
+    def coverage(self, now: float) -> float:
+        """Seconds of the window backed by recorded values."""
+        if not self.samples:
+            return 0.0
+        return max(0.0, now - max(self.samples[0][0], now - self.window))
+
+    def mean(self, now: float) -> float | None:
+        """Mean over the window ending at `now` (latest value if the window is empty)."""
+        if not self.samples:
+            return None
+        start = now - self.window
+        items = list(self.samples)
+        total = weight = 0.0
+        for index, (timestamp, value) in enumerate(items):
+            segment_start = max(timestamp, start)
+            segment_end = items[index + 1][0] if index + 1 < len(items) else now
+            if segment_end > segment_start:
+                total += value * (segment_end - segment_start)
+                weight += segment_end - segment_start
+        return total / weight if weight > 0 else items[-1][1]
 
 
 def comfort_level(temp: float, humidity: float, settings: Settings) -> str:
@@ -427,9 +506,28 @@ def _r(value: float, digits: int = 2) -> float:
     return round(value, digits)
 
 
-def compute_all(profile: str, m: Measurements, s: Settings) -> dict[str, Any]:
-    """Compute every derived value available from the measurements."""
+def _hysteresis(was_on: Any, on: bool, off: bool) -> bool:
+    """Switch on when `on` holds; once on, switch back off only when `off` holds."""
+    return not off if was_on is True else on
+
+
+def compute_all(
+    profile: str,
+    m: Measurements,
+    s: Settings,
+    previous: dict[str, Any] | None = None,
+    now: float | None = None,
+    mold_history: RollingMean | None = None,
+) -> dict[str, Any]:
+    """Compute every derived value available from the measurements.
+
+    `previous` is the last result, used for alert hysteresis. When `now` (in
+    seconds) and `mold_history` are given, the reference humidity is recorded
+    in the history and the mold assessment uses its mean over
+    `s.mold_window` hours instead of the instantaneous value.
+    """
     out: dict[str, Any] = {}
+    prev = previous or {}
     if m.temperature is None or m.humidity is None:
         return out
 
@@ -480,8 +578,18 @@ def compute_all(profile: str, m: Measurements, s: Settings) -> dict[str, Any]:
         out["feels_like"] = _r(feels_like(t, rh, wind or 0.0))
         out["cloud_base"] = round(cloud_base(t, td))
         out["heat_stress"] = heat_stress(hi)
-        out["frost_risk"] = t <= 0 or (t <= 3 and td <= 0)
-        out["fog_risk"] = (t - td) <= 1.5 and (wind is None or wind < 15)
+        out["frost_risk"] = _hysteresis(
+            prev.get("frost_risk"),
+            on=t <= 0 or (t <= 3 and td <= 0),
+            off=t > FROST_HYSTERESIS and (t > 3 + FROST_HYSTERESIS or td > FROST_HYSTERESIS),
+        )
+        spread = t - td
+        out["fog_risk"] = _hysteresis(
+            prev.get("fog_risk"),
+            on=spread <= FOG_MAX_SPREAD and (wind is None or wind < FOG_MAX_WIND),
+            off=spread > FOG_MAX_SPREAD + FOG_SPREAD_HYSTERESIS
+            or (wind is not None and wind >= FOG_MAX_WIND + FOG_WIND_HYSTERESIS),
+        )
 
     if profile == PROFILE_INDOOR:
         radiant = m.radiant_temperature if m.radiant_temperature is not None else t
@@ -507,24 +615,55 @@ def compute_all(profile: str, m: Measurements, s: Settings) -> dict[str, Any]:
             out.update(
                 surface_temperature=_r(t_surface),
                 surface_humidity=_r(surface_rh, 1),
-                condensation_alert=t_surface <= td,
+                condensation_alert=_hysteresis(
+                    prev.get("condensation_alert"),
+                    on=t_surface <= td,
+                    off=t_surface > td + CONDENSATION_HYSTERESIS,
+                ),
             )
-        out["mold_risk"] = mold_risk(reference_humidity)
-        out["mold_alert"] = reference_humidity >= s.mold_threshold
 
+        # Mold needs lasting dampness: judge the mean, not a passing peak (shower)
+        mold_humidity = reference_humidity
+        if mold_history is not None and now is not None:
+            mold_history.window = s.mold_window * 3600
+            mold_history.add(now, reference_humidity)
+            mold_humidity = mold_history.mean(now)
+            out.update(
+                mold_humidity=_r(mold_humidity, 1),
+                mold_window=s.mold_window,
+                mold_coverage=_r(mold_history.coverage(now) / 3600, 1),
+            )
+        out["mold_risk"] = mold_risk(mold_humidity)
+        out["mold_alert"] = _hysteresis(
+            prev.get("mold_alert"),
+            on=mold_humidity >= s.mold_threshold,
+            off=mold_humidity < s.mold_threshold - MOLD_HYSTERESIS,
+        )
+
+        previous_reasons = prev.get("ventilation_reasons") or []
         reasons = []
-        if m.co2 is not None and m.co2 >= s.co2_max:
+        if m.co2 is not None and _hysteresis(
+            "co2" in previous_reasons,
+            on=m.co2 >= s.co2_max,
+            off=m.co2 < s.co2_max - CO2_HYSTERESIS,
+        ):
             reasons.append("co2")
         if m.outdoor_temperature is not None and m.outdoor_humidity is not None:
             out_rh = max(1.0, min(100.0, m.outdoor_humidity))
             ah_out = absolute_humidity(m.outdoor_temperature, out_rh)
             out["outdoor_absolute_humidity"] = _r(ah_out)
-            if rh > s.humidity_max and ah_out < ah - VENTILATION_HUMIDITY_MARGIN:
+            if _hysteresis(
+                "humidity" in previous_reasons,
+                on=rh > s.humidity_max and ah_out < ah - VENTILATION_HUMIDITY_MARGIN,
+                off=rh <= s.humidity_max - HUMIDITY_HYSTERESIS
+                or ah_out >= ah - VENTILATION_HUMIDITY_MARGIN + ABSOLUTE_HUMIDITY_HYSTERESIS,
+            ):
                 reasons.append("humidity")
-        if (
-            m.outdoor_temperature is not None
-            and t > s.temp_max
-            and m.outdoor_temperature < t - VENTILATION_COOLING_MARGIN
+        if m.outdoor_temperature is not None and _hysteresis(
+            "cooling" in previous_reasons,
+            on=t > s.temp_max and m.outdoor_temperature < t - VENTILATION_COOLING_MARGIN,
+            off=t <= s.temp_max - TEMPERATURE_HYSTERESIS
+            or m.outdoor_temperature >= t - VENTILATION_COOLING_MARGIN + COOLING_HYSTERESIS,
         ):
             reasons.append("cooling")
         out["ventilation"] = bool(reasons)
